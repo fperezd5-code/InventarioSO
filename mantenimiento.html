@@ -343,10 +343,10 @@
             </button>
             <!--<button class="btn btn-success" onclick="exportData()">
                 💾 Exportar JSON
-            </button>
-            <button class="btn btn-warning" onclick="importData()">
-                📁 Importar JSON
             </button>-->
+            <button class="btn btn-warning" onclick="importData()">
+                📁 Carga inicial
+            </button>
             <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileImport(event)">
             <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar servidores..."
                 onkeyup="filterServers()">
@@ -951,12 +951,12 @@
             reloadButton.onclick = reloadFromJSON;
 
             // Insertar antes del botón de sincronización
-            const syncButton = toolbar.querySelector('button[onclick="syncWithDashboard()"]');
+            /*const syncButton = toolbar.querySelector('button[onclick="syncWithDashboard()"]');
             if (syncButton) {
                 toolbar.insertBefore(reloadButton, syncButton);
             } else {
                 toolbar.appendChild(reloadButton);
-            }
+            }*/
         }
 
         // Función para recargar datos desde JSON
