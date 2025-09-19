@@ -334,7 +334,7 @@
     <div class="container">
         <div class="header">
             <h1>🔧 Mantenimiento de Servidores</h1>
-            <a href="Inventario.html" class="nav-button">📊 Ver Dashboard</a>
+            <a href="Index.html" class="nav-button">📊 Ver Dashboard</a>
         </div>
 
         <div class="toolbar">
@@ -947,16 +947,16 @@
             const toolbar = document.querySelector('.toolbar');
             const reloadButton = document.createElement('button');
             reloadButton.className = 'btn btn-warning';
-            reloadButton.innerHTML = '🔄 Recargar desde JSON';
+            reloadButton.innerHTML = '🔄 Carga inicial';
             reloadButton.onclick = reloadFromJSON;
 
             // Insertar antes del botón de sincronización
-            //const syncButton = toolbar.querySelector('button[onclick="syncWithDashboard()"]');
-            //if (syncButton) {
-            //    toolbar.insertBefore(reloadButton, syncButton);
-            //} else {
-            //    toolbar.appendChild(reloadButton);
-            //}
+            const syncButton = toolbar.querySelector('button[onclick="syncWithDashboard()"]');
+            if (syncButton) {
+                toolbar.insertBefore(reloadButton, syncButton);
+            } else {
+                toolbar.appendChild(reloadButton);
+            }
         }
 
         // Función para recargar datos desde JSON
