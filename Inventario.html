@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Inventario de Servidores</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* Agregar estos estilos al CSS del dashboard */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-content {
+            flex: 1;
+        }
+
+        .header-actions {
+            margin-left: 20px;
+        }
+
+        .nav-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header-actions {
+                margin-left: 0;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 15px;
+            padding: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            gap: 8px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #757575;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #1976D2, #2196F3);
+            color: white;
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.4);
+        }
+
+        .tab:hover:not(.active) {
+            background: #f5f5f5;
+            color: #1976D2;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1976D2, #2196F3);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .metric-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 24px;
+        }
+
+        .metric-icon.blue {
+            background: linear-gradient(135deg, #1976D2, #2196F3);
+        }
+
+        .metric-icon.green {
+            background: linear-gradient(135deg, #388E3C, #4CAF50);
+        }
+
+        .metric-icon.orange {
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+        }
+
+        .metric-icon.purple {
+            background: linear-gradient(135deg, #9C27B0, #BA68C8);
+        }
+
+        .metric-title {
+            font-size: 1rem;
+            color: #757575;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .metric-subtitle {
+            font-size: 0.9rem;
+            color: #9e9e9e;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
+
+        .chart-card h3 {
+            color: #1976D2;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            height: 300px;
+        }
+
+        .server-list {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .server-list-header {
+            background: linear-gradient(135deg, #1976D2, #2196F3);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .server-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .server-table th,
+        .server-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .server-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #1976D2;
+        }
+
+        .server-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 80px;
+            display: inline-block;
+        }
+
+        .status-optimal {
+            background: #E8F5E8;
+            color: #388E3C;
+        }
+
+        .status-warning {
+            background: #FFF8E1;
+            color: #FBC02D;
+        }
+
+        .status-critical {
+            background: #FFEBEE;
+            color: #D32F2F;
+        }
+
+        .usage-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .usage-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .usage-optimal {
+            background: #4CAF50;
+        }
+
+        .usage-warning {
+            background: #FFC107;
+        }
+
+        .usage-critical {
+            background: #F44336;
+        }
+
+        .filter-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #1976D2;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #1976D2;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .server-table {
+                font-size: 0.9rem;
+            }
+
+            .server-table th,
+            .server-table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🖥️ Dashboard de Inventario de Servidores</h1>
+            <p>Monitoreo en tiempo real de la infraestructura tecnológica</p>
+
+            <!-- Agregar en el header del dashboard, después del <p> -->
+            <div class="header-actions">
+                <a href="mantenimiento.html" class="nav-button">
+                    🔧 Mantenimiento
+                </a>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">📊 Resumen General</button>
+            <button class="tab" onclick="switchTab('servers')">🖥️ Servidores</button>
+            <button class="tab" onclick="switchTab('resources')">📈 Recursos</button>
+            <button class="tab" onclick="switchTab('locations')">📍 Ubicaciones</button>
+        </div>
+
+        <!-- Tab Overview -->
+        <div id="overview" class="tab-content active">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-card::before"></div>
+                    <div class="metric-header">
+                        <div class="metric-icon blue">🖥️</div>
+                        <div class="metric-title">Total Servidores</div>
+                    </div>
+                    <div class="metric-value" id="totalServers">23</div>
+                    <div class="metric-subtitle">8 Físicos • 15 Virtuales</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon green">💾</div>
+                        <div class="metric-title">RAM Total</div>
+                    </div>
+                    <div class="metric-value" id="totalRAM">1,408 GB</div>
+                    <div class="metric-subtitle">Disponible en el inventario</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon orange">🗄️</div>
+                        <div class="metric-title">Almacenamiento</div>
+                    </div>
+                    <div class="metric-value" id="totalStorage">90.8 TB</div>
+                    <div class="metric-subtitle">Capacidad total</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon purple">⚡</div>
+                        <div class="metric-title">Consumo Total</div>
+                    </div>
+                    <div class="metric-value" id="totalPower">4,541 W</div>
+                    <div class="metric-subtitle">Potencia máxima</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>📊 Distribución por Tipo</h3>
+                    <div class="chart-container">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>🏢 Distribución por Data Center</h3>
+                    <div class="chart-container">
+                        <canvas id="locationChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>📈 Uso Promedio de Recursos</h3>
+                    <div class="chart-container">
+                        <canvas id="resourceUsageChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>🔧 Sistemas Operativos</h3>
+                    <div class="chart-container">
+                        <canvas id="osChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Servers -->
+        <div id="servers" class="tab-content">
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <span class="filter-label">Filtrar por:</span>
+                    <select class="filter-select" id="typeFilter" onchange="filterServers()">
+                        <option value="">Todos los tipos</option>
+                        <option value="Físico">Físico</option>
+                        <option value="Virtual">Virtual</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Ubicación:</span>
+                    <select class="filter-select" id="locationFilter" onchange="filterServers()">
+                        <option value="">Todas las ubicaciones</option>
+                        <option value="Data Center A">Data Center A</option>
+                        <option value="Data Center B">Data Center B</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Estado:</span>
+                    <select class="filter-select" id="statusFilter" onchange="filterServers()">
+                        <option value="">Todos los estados</option>
+                        <option value="optimal">Óptimo</option>
+                        <option value="warning">Advertencia</option>
+                        <option value="critical">Crítico</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="server-list">
+                <div class="server-list-header">
+                    Lista de Servidores - Inventario Completo
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="server-table" id="serverTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Modelo</th>
+                                <th>SO</th>
+                                <th>CPU</th>
+                                <th>RAM</th>
+                                <th>Uso CPU</th>
+                                <th>Uso RAM</th>
+                                <th>Uso Disco</th>
+                                <th>Estado</th>
+                                <th>Ubicación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="serverTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Resources -->
+        <div id="resources" class="tab-content">
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>💻 Uso de CPU por Servidor</h3>
+                    <div class="chart-container">
+                        <canvas id="cpuUsageChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>💾 Uso de RAM por Servidor</h3>
+                    <div class="chart-container">
+                        <canvas id="ramUsageChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>🗄️ Uso de Disco por Servidor</h3>
+                    <div class="chart-container">
+                        <canvas id="diskUsageChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>⚡ Consumo de Energía</h3>
+                    <div class="chart-container">
+                        <canvas id="powerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Locations -->
+        <div id="locations" class="tab-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon blue">🏢</div>
+                        <div class="metric-title">Data Center A</div>
+                    </div>
+                    <div class="metric-value" id="dcAServers">4</div>
+                    <div class="metric-subtitle">Servidores físicos</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon green">🏢</div>
+                        <div class="metric-title">Data Center B</div>
+                    </div>
+                    <div class="metric-value" id="dcBServers">19</div>
+                    <div class="metric-subtitle">Servidores (físicos y virtuales)</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon orange">⚡</div>
+                        <div class="metric-title">Consumo DC A</div>
+                    </div>
+                    <div class="metric-value" id="dcAPower">1,287 W</div>
+                    <div class="metric-subtitle">Potencia máxima</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-icon purple">⚡</div>
+                        <div class="metric-title">Consumo DC B</div>
+                    </div>
+                    <div class="metric-value" id="dcBPower">3,254 W</div>
+                    <div class="metric-subtitle">Potencia máxima</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>📊 Comparación por Data Center</h3>
+                    <div class="chart-container">
+                        <canvas id="dcComparisonChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3>🔧 Aplicativos por Ubicación</h3>
+                    <div class="chart-container">
+                        <canvas id="appsLocationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // Nueva implementación con datos centralizados
+        let serverData = [];
+
+        // Función para cargar datos del JSON o localStorage
+        async function loadServerData() {
+            try {
+                // Primero intentar cargar desde localStorage (datos actualizados del mantenimiento)
+                const storedData = localStorage.getItem('serversData');
+                if (storedData) {
+                    serverData = JSON.parse(storedData);
+                    console.log('✅ Datos cargados desde localStorage:', serverData.length, 'servidores');
+                    return;
+                }
+
+                // Si no hay datos en localStorage, cargar desde el JSON
+                const response = await window.fs.readFile('inventario_servers.json', { encoding: 'utf8' });
+                serverData = JSON.parse(response);
+
+                // Guardar en localStorage para futuras consultas
+                localStorage.setItem('serversData', JSON.stringify(serverData));
+                console.log('✅ Datos cargados desde JSON:', serverData.length, 'servidores');
+
+            } catch (error) {
+                console.error('❌ Error al cargar datos:', error);
+                serverData = [];
+            }
+        }
+
+        // Función para detectar cambios y actualizar automáticamente
+        function setupDataSync() {
+            // Configurar BroadcastChannel
+            setupBroadcastSync();
+
+            // Escuchar cambios en localStorage (para otras pestañas)
+            window.addEventListener('storage', function (e) {
+                if (e.key === 'serversData') {
+                    console.log('🔄 Detectados cambios en localStorage, actualizando dashboard...');
+                    loadServerData().then(() => {
+                        updateDashboard();
+                    });
+                }
+            });
+
+            // Verificar cambios cada 3 segundos (reducido de 5 para mayor responsividad)
+            setInterval(() => {
+                const currentData = localStorage.getItem('serversData');
+                if (currentData) {
+                    try {
+                        const parsedData = JSON.parse(currentData);
+                        const currentDataString = JSON.stringify(serverData);
+
+                        if (currentData !== currentDataString) {
+                            console.log('🔄 Datos actualizados detectados, refrescando dashboard...');
+                            serverData = parsedData;
+                            updateDashboard();
+                        }
+                    } catch (error) {
+                        console.error('Error al verificar cambios:', error);
+                    }
+                }
+            }, 3000);
+        }
+
+        function setupBroadcastSync() {
+            if (typeof BroadcastChannel !== 'undefined') {
+                const channel = new BroadcastChannel('server_data_sync');
+
+                channel.addEventListener('message', (event) => {
+                    if (event.data.type === 'DATA_UPDATED') {
+                        console.log('📡 Recibida notificación de actualización de datos');
+                        // Recargar datos inmediatamente
+                        loadServerData().then(() => {
+                            updateDashboard();
+                            console.log('🔄 Dashboard actualizado desde notificación broadcast');
+                        });
+                    }
+                });
+
+                // Limpiar al cerrar la página
+                window.addEventListener('beforeunload', () => {
+                    channel.close();
+                });
+
+                console.log('📡 BroadcastChannel configurado para sincronización');
+            }
+        }
+
+        // Función para actualizar todo el dashboard
+        function updateDashboard() {
+            // Actualizar métricas
+            updateMetrics();
+
+            // Re-renderizar tabla si está visible
+            if (document.getElementById('servers').classList.contains('active')) {
+                renderServerTable();
+            }
+
+            // Actualizar gráficos según la pestaña activa
+            const activeTab = document.querySelector('.tab.active').onclick.toString().match(/switchTab\('(.+?)'\)/);
+            if (activeTab) {
+                const tabName = activeTab[1];
+                setTimeout(() => {
+                    switch (tabName) {
+                        case 'overview':
+                            initOverviewCharts();
+                            break;
+                        case 'resources':
+                            initResourceCharts();
+                            break;
+                        case 'locations':
+                            initLocationCharts();
+                            break;
+                    }
+                }, 100);
+            }
+        }
+
+        // Función para actualizar métricas
+        function updateMetrics() {
+            const totalServers = serverData.length;
+            const totalRAM = serverData.reduce((sum, s) => sum + (s['RAM (GB)'] || 0), 0);
+            const totalStorage = serverData.reduce((sum, s) => sum + (s['Almacenamiento (TB)'] || 0), 0);
+            const totalPower = serverData.reduce((sum, s) => sum + (s['Consumo Máx (Watts)'] || 0), 0);
+
+            // Actualizar elementos del DOM
+            const totalServersEl = document.getElementById('totalServers');
+            const totalRAMEl = document.getElementById('totalRAM');
+            const totalStorageEl = document.getElementById('totalStorage');
+            const totalPowerEl = document.getElementById('totalPower');
+
+            if (totalServersEl) totalServersEl.textContent = totalServers;
+            if (totalRAMEl) totalRAMEl.textContent = totalRAM.toLocaleString() + ' GB';
+            if (totalStorageEl) totalStorageEl.textContent = totalStorage.toFixed(1) + ' TB';
+            if (totalPowerEl) totalPowerEl.textContent = totalPower.toLocaleString() + ' W';
+
+            // Actualizar métricas por data center
+            const dcA = serverData.filter(s => s['Ubicación'] === 'Data Center A');
+            const dcB = serverData.filter(s => s['Ubicación'] === 'Data Center B');
+
+            const dcAServersEl = document.getElementById('dcAServers');
+            const dcBServersEl = document.getElementById('dcBServers');
+            const dcAPowerEl = document.getElementById('dcAPower');
+            const dcBPowerEl = document.getElementById('dcBPower');
+
+            if (dcAServersEl) dcAServersEl.textContent = dcA.length;
+            if (dcBServersEl) dcBServersEl.textContent = dcB.length;
+            if (dcAPowerEl) dcAPowerEl.textContent = dcA.reduce((sum, s) => sum + (s['Consumo Máx (Watts)'] || 0), 0).toLocaleString() + ' W';
+            if (dcBPowerEl) dcBPowerEl.textContent = dcB.reduce((sum, s) => sum + (s['Consumo Máx (Watts)'] || 0), 0).toLocaleString() + ' W';
+        }
+
+        // Funciones de utilidad
+        function getServerStatus(server) {
+            const avgUsage = (server['Uso CPU (%)'] + server['Uso RAM (%)'] + server['Uso Disco (%)']) / 3;
+            if (avgUsage >= 75) return 'critical';
+            if (avgUsage >= 60) return 'warning';
+            return 'optimal';
+        }
+
+        function getUsageColor(usage) {
+            if (usage >= 75) return 'usage-critical';
+            if (usage >= 60) return 'usage-warning';
+            return 'usage-optimal';
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'critical': return 'status-critical';
+                case 'warning': return 'status-warning';
+                default: return 'status-optimal';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'critical': return 'Crítico';
+                case 'warning': return 'Advertencia';
+                default: return 'Óptimo';
+            }
+        }
+
+        // Funciones de navegación
+        function switchTab(tabName) {
+            // Ocultar todos los contenidos
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+
+            // Mostrar el contenido seleccionado
+            document.getElementById(tabName).classList.add('active');
+
+            // Actualizar botones
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Inicializar gráficos específicos
+            setTimeout(() => {
+                switch (tabName) {
+                    case 'overview':
+                        initOverviewCharts();
+                        break;
+                    case 'resources':
+                        initResourceCharts();
+                        break;
+                    case 'locations':
+                        initLocationCharts();
+                        break;
+                }
+            }, 100);
+        }
+
+        // Funciones de filtrado
+        function filterServers() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const locationFilter = document.getElementById('locationFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filteredData = serverData.filter(server => {
+                if (typeFilter && server.Tipo !== typeFilter) return false;
+                if (locationFilter && server.Ubicación !== locationFilter) return false;
+                if (statusFilter && getServerStatus(server) !== statusFilter) return false;
+                return true;
+            });
+
+            renderServerTable(filteredData);
+        }
+
+        // Renderizado de tabla de servidores
+        function renderServerTable(data = serverData) {
+            const tbody = document.getElementById('serverTableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(server => {
+                const status = getServerStatus(server);
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td><strong>${server['ID Servidor']}</strong></td>
+                    <td>${server['Nombre Servidor']}</td>
+                    <td><span class="status-badge ${server.Tipo === 'Físico' ? 'status-optimal' : 'status-warning'}">${server.Tipo}</span></td>
+                    <td>${server['Modelo Equipo']}</td>
+                    <td>${server['Licencia SO']}</td>
+                    <td>${server.Procesador}</td>
+                    <td>${server['RAM (GB)']} GB</td>
+                    <td>
+                        <div class="usage-bar">
+                            <div class="usage-fill ${getUsageColor(server['Uso CPU (%)'])}" style="width: ${server['Uso CPU (%)']}%"></div>
+                        </div>
+                        ${server['Uso CPU (%)']}%
+                    </td>
+                    <td>
+                        <div class="usage-bar">
+                            <div class="usage-fill ${getUsageColor(server['Uso RAM (%)'])}" style="width: ${server['Uso RAM (%)']}%"></div>
+                        </div>
+                        ${server['Uso RAM (%)']}%
+                    </td>
+                    <td>
+                        <div class="usage-bar">
+                            <div class="usage-fill ${getUsageColor(server['Uso Disco (%)'])}" style="width: ${server['Uso Disco (%)']}%"></div>
+                        </div>
+                        ${server['Uso Disco (%)']}%
+                    </td>
+                    <td><span class="status-badge ${getStatusBadgeClass(status)}">${getStatusText(status)}</span></td>
+                    <td>📍 ${server.Ubicación}</td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+
+        // Inicialización de gráficos de resumen
+        function initOverviewCharts() {
+            // Gráfico de tipos
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            const typeData = serverData.reduce((acc, server) => {
+                acc[server.Tipo] = (acc[server.Tipo] || 0) + 1;
+                return acc;
+            }, {});
+
+            new Chart(typeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(typeData),
+                    datasets: [{
+                        data: Object.values(typeData),
+                        backgroundColor: ['#1976D2', '#4CAF50', '#FF9800', '#9C27B0'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de ubicaciones
+            const locationCtx = document.getElementById('locationChart').getContext('2d');
+            const locationData = serverData.reduce((acc, server) => {
+                acc[server.Ubicación] = (acc[server.Ubicación] || 0) + 1;
+                return acc;
+            }, {});
+
+            new Chart(locationCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(locationData),
+                    datasets: [{
+                        data: Object.values(locationData),
+                        backgroundColor: ['#2196F3', '#4CAF50'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de uso de recursos
+            const resourceCtx = document.getElementById('resourceUsageChart').getContext('2d');
+            const avgCPU = serverData.reduce((sum, s) => sum + s['Uso CPU (%)'], 0) / serverData.length;
+            const avgRAM = serverData.reduce((sum, s) => sum + s['Uso RAM (%)'], 0) / serverData.length;
+            const avgDisk = serverData.reduce((sum, s) => sum + s['Uso Disco (%)'], 0) / serverData.length;
+
+            new Chart(resourceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['CPU', 'RAM', 'Disco'],
+                    datasets: [{
+                        label: 'Uso Promedio (%)',
+                        data: [avgCPU.toFixed(1), avgRAM.toFixed(1), avgDisk.toFixed(1)],
+                        backgroundColor: ['#1976D2', '#4CAF50', '#FF9800'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: '#f5f5f5' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Gráfico de sistemas operativos
+            const osCtx = document.getElementById('osChart').getContext('2d');
+            const osData = serverData.reduce((acc, server) => {
+                const os = server['Licencia SO'].includes('Windows') ? 'Windows' :
+                    server['Licencia SO'].includes('Linux') ? 'Linux' :
+                        server['Licencia SO'].includes('Ubuntu') ? 'Ubuntu' :
+                            server['Licencia SO'].includes('CentOS') ? 'CentOS' :
+                                server['Licencia SO'].includes('VMware') ? 'VMware ESXi' : 'Otro';
+                acc[os] = (acc[os] || 0) + 1;
+                return acc;
+            }, {});
+
+            new Chart(osCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(osData),
+                    datasets: [{
+                        data: Object.values(osData),
+                        backgroundColor: ['#1976D2', '#4CAF50', '#FF9800', '#9C27B0', '#03A9F4'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: '#f5f5f5' }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Inicialización de gráficos de recursos
+        function initResourceCharts() {
+            // Gráfico de uso de CPU
+            const cpuCtx = document.getElementById('cpuUsageChart').getContext('2d');
+            const cpuData = serverData.map(s => ({
+                name: s['Nombre Servidor'],
+                usage: s['Uso CPU (%)']
+            })).sort((a, b) => b.usage - a.usage).slice(0, 10);
+
+            new Chart(cpuCtx, {
+                type: 'bar',
+                data: {
+                    labels: cpuData.map(d => d.name),
+                    datasets: [{
+                        label: 'Uso CPU (%)',
+                        data: cpuData.map(d => d.usage),
+                        backgroundColor: cpuData.map(d =>
+                            d.usage >= 75 ? '#F44336' :
+                                d.usage >= 60 ? '#FFC107' : '#4CAF50'
+                        ),
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: '#f5f5f5' }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Gráfico de uso de RAM
+            const ramCtx = document.getElementById('ramUsageChart').getContext('2d');
+            const ramData = serverData.map(s => ({
+                name: s['Nombre Servidor'],
+                usage: s['Uso RAM (%)']
+            })).sort((a, b) => b.usage - a.usage).slice(0, 10);
+
+            new Chart(ramCtx, {
+                type: 'bar',
+                data: {
+                    labels: ramData.map(d => d.name),
+                    datasets: [{
+                        label: 'Uso RAM (%)',
+                        data: ramData.map(d => d.usage),
+                        backgroundColor: ramData.map(d =>
+                            d.usage >= 75 ? '#F44336' :
+                                d.usage >= 60 ? '#FFC107' : '#4CAF50'
+                        ),
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: '#f5f5f5' }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Gráfico de uso de disco
+            const diskCtx = document.getElementById('diskUsageChart').getContext('2d');
+            const diskData = serverData.map(s => ({
+                name: s['Nombre Servidor'],
+                usage: s['Uso Disco (%)']
+            })).sort((a, b) => b.usage - a.usage).slice(0, 10);
+
+            new Chart(diskCtx, {
+                type: 'bar',
+                data: {
+                    labels: diskData.map(d => d.name),
+                    datasets: [{
+                        label: 'Uso Disco (%)',
+                        data: diskData.map(d => d.usage),
+                        backgroundColor: diskData.map(d =>
+                            d.usage >= 75 ? '#F44336' :
+                                d.usage >= 60 ? '#FFC107' : '#4CAF50'
+                        ),
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: '#f5f5f5' }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Gráfico de consumo de energía
+            const powerCtx = document.getElementById('powerChart').getContext('2d');
+            const powerData = serverData.filter(s => s['Consumo Máx (Watts)'] > 100).map(s => ({
+                name: s['Nombre Servidor'],
+                power: s['Consumo Máx (Watts)']
+            })).sort((a, b) => b.power - a.power).slice(0, 10);
+
+            new Chart(powerCtx, {
+                type: 'bar',
+                data: {
+                    labels: powerData.map(d => d.name),
+                    datasets: [{
+                        label: 'Consumo (W)',
+                        data: powerData.map(d => d.power),
+                        backgroundColor: '#FF9800',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f5f5f5' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Inicialización de gráficos de ubicación
+        function initLocationCharts() {
+            // Gráfico de comparación por data center
+            const dcCtx = document.getElementById('dcComparisonChart').getContext('2d');
+            const dcA = serverData.filter(s => s.Ubicación === 'Data Center A');
+            const dcB = serverData.filter(s => s.Ubicación === 'Data Center B');
+
+            new Chart(dcCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Servidores', 'RAM Total (GB)', 'Consumo Total (W)'],
+                    datasets: [{
+                        label: 'Data Center A',
+                        data: [
+                            dcA.length,
+                            dcA.reduce((sum, s) => sum + s['RAM (GB)'], 0),
+                            dcA.reduce((sum, s) => sum + s['Consumo Máx (Watts)'], 0)
+                        ],
+                        backgroundColor: '#1976D2',
+                        borderRadius: 6
+                    }, {
+                        label: 'Data Center B',
+                        data: [
+                            dcB.length,
+                            dcB.reduce((sum, s) => sum + s['RAM (GB)'], 0),
+                            dcB.reduce((sum, s) => sum + s['Consumo Máx (Watts)'], 0)
+                        ],
+                        backgroundColor: '#4CAF50',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f5f5f5' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de aplicativos por ubicación
+            const appsCtx = document.getElementById('appsLocationChart').getContext('2d');
+            const appsData = serverData.reduce((acc, server) => {
+                const key = `${server.Ubicación} - ${server['Aplicativos soportados']}`;
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+
+            const sortedApps = Object.entries(appsData).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+            new Chart(appsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: sortedApps.map(([key]) => key.replace('Data Center ', 'DC ')),
+                    datasets: [{
+                        data: sortedApps.map(([, value]) => value),
+                        backgroundColor: [
+                            '#1976D2', '#4CAF50', '#FF9800', '#9C27B0',
+                            '#03A9F4', '#FFC107', '#F44336', '#795548'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Nueva inicialización con datos centralizados
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Cargar datos desde JSON o localStorage
+            await loadServerData();
+
+            // Configurar sincronización automática
+            setupDataSync();
+
+            // Solo proceder si tenemos datos
+            if (serverData.length === 0) {
+                console.error('⚠️ No se pudieron cargar los datos del servidor');
+                return;
+            }
+
+            // Actualizar métricas iniciales
+            updateMetrics();
+
+            // Renderizar tabla inicial
+            renderServerTable();
+
+            // Inicializar gráficos del resumen
+            initOverviewCharts();
+
+            console.log('✅ Dashboard cargado con', serverData.length, 'servidores');
+        });
+
+        // Función para actualizar datos en tiempo real (simulado)
+        function updateRealTimeData() {
+            // Recargar datos actuales del localStorage por si hubo cambios
+            const currentData = localStorage.getItem('serversData');
+            if (currentData) {
+                try {
+                    const parsedData = JSON.parse(currentData);
+                    // Solo simular cambios si los datos no han cambiado externamente
+                    if (JSON.stringify(parsedData) === JSON.stringify(serverData)) {
+                        // Simular cambios aleatorios en el uso de recursos
+                        serverData.forEach(server => {
+                            const cpuChange = (Math.random() - 0.5) * 4; // ±2%
+                            const ramChange = (Math.random() - 0.5) * 4; // ±2%
+                            const diskChange = (Math.random() - 0.5) * 2; // ±1%
+
+                            server['Uso CPU (%)'] = Math.max(5, Math.min(95, server['Uso CPU (%)'] + cpuChange));
+                            server['Uso RAM (%)'] = Math.max(10, Math.min(95, server['Uso RAM (%)'] + ramChange));
+                            server['Uso Disco (%)'] = Math.max(15, Math.min(90, server['Uso Disco (%)'] + diskChange));
+                        });
+
+                        // Guardar datos actualizados
+                        localStorage.setItem('serversData', JSON.stringify(serverData));
+                    } else {
+                        // Los datos han sido modificados externamente, usar esos
+                        serverData = parsedData;
+                    }
+                } catch (error) {
+                    console.error('Error al procesar datos actualizados:', error);
+                }
+            }
+
+            // Actualizar tabla si está visible
+            if (document.getElementById('servers').classList.contains('active')) {
+                filterServers();
+            }
+        }
+
+        // Actualizar datos cada 30 segundos (simulación de tiempo real)
+        setInterval(updateRealTimeData, 30000);
+
+        // Animaciones y efectos adicionales
+        function addAnimations() {
+            // Animación de contadores
+            const counters = document.querySelectorAll('.metric-value');
+            counters.forEach(counter => {
+                const target = parseInt(counter.textContent.replace(/[^\d]/g, ''));
+                let current = 0;
+                const increment = target / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        counter.textContent = counter.textContent; // Restaurar formato original
+                        clearInterval(timer);
+                    } else {
+                        const formatted = Math.floor(current).toLocaleString();
+                        counter.textContent = formatted + (counter.textContent.includes('GB') ? ' GB' :
+                            counter.textContent.includes('TB') ? ' TB' :
+                                counter.textContent.includes('W') ? ' W' : '');
+                    }
+                }, 50);
+            });
+        }
+
+        // Función de búsqueda
+        function searchServers(query) {
+            const filteredData = serverData.filter(server => {
+                return Object.values(server).some(value =>
+                    value && value.toString().toLowerCase().includes(query.toLowerCase())
+                );
+            });
+            renderServerTable(filteredData);
+        }
+
+        // Exportar datos a CSV
+        function exportToCSV() {
+            const headers = Object.keys(serverData[0]);
+            const csvContent = [
+                headers.join(','),
+                ...serverData.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'inventario_servidores.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Función para mostrar alertas
+        function checkAlerts() {
+            const alerts = [];
+
+            serverData.forEach(server => {
+                const status = getServerStatus(server);
+                if (status === 'critical') {
+                    alerts.push(`⚠️ ${server['Nombre Servidor']} tiene uso crítico de recursos`);
+                }
+
+                if (server['Uso RAM (%)'] > 90) {
+                    alerts.push(`💾 ${server['Nombre Servidor']} tiene memoria RAM crítica (${server['Uso RAM (%)']}%)`);
+                }
+
+                if (server['Uso Disco (%)'] > 85) {
+                    alerts.push(`💽 ${server['Nombre Servidor']} tiene espacio en disco crítico (${server['Uso Disco (%)']}%)`);
+                }
+            });
+
+            if (alerts.length > 0) {
+                console.log('🚨 ALERTAS DETECTADAS:', alerts);
+                // Aquí podrías mostrar las alertas en la UI
+            }
+        }
+
+        // Verificar alertas cada 5 minutos
+        setInterval(checkAlerts, 300000);
+
+        // Función para generar reporte
+        function generateReport() {
+            const physicalServers = serverData.filter(s => s.Tipo === 'Físico').length;
+            const virtualServers = serverData.filter(s => s.Tipo === 'Virtual').length;
+            const criticalServers = serverData.filter(s => getServerStatus(s) === 'critical').length;
+
+            const avgCPU = (serverData.reduce((sum, s) => sum + s['Uso CPU (%)'], 0) / serverData.length).toFixed(1);
+            const avgRAM = (serverData.reduce((sum, s) => sum + s['Uso RAM (%)'], 0) / serverData.length).toFixed(1);
+            const avgDisk = (serverData.reduce((sum, s) => sum + s['Uso Disco (%)'], 0) / serverData.length).toFixed(1);
+
+            const report = `
+📊 REPORTE DE INFRAESTRUCTURA DE SERVIDORES
+═══════════════════════════════════════════
+
+📈 RESUMEN EJECUTIVO
+• Total de Servidores: ${serverData.length}
+• Servidores Físicos: ${physicalServers}
+• Servidores Virtuales: ${virtualServers}
+• Servidores en Estado Crítico: ${criticalServers}
+
+💻 USO PROMEDIO DE RECURSOS
+• CPU: ${avgCPU}%
+• RAM: ${avgRAM}%
+• Disco: ${avgDisk}%
+
+🏢 DISTRIBUCIÓN POR UBICACIÓN
+• Data Center A: ${serverData.filter(s => s.Ubicación === 'Data Center A').length} servidores
+• Data Center B: ${serverData.filter(s => s.Ubicación === 'Data Center B').length} servidores
+
+⚡ CONSUMO ENERGÉTICO
+• Consumo Total: ${serverData.reduce((sum, s) => sum + s['Consumo Máx (Watts)'], 0).toLocaleString()} W
+• Promedio por Servidor: ${(serverData.reduce((sum, s) => sum + s['Consumo Máx (Watts)'], 0) / serverData.length).toFixed(0)} W
+
+🔧 SISTEMAS OPERATIVOS
+• Windows: ${serverData.filter(s => s['Licencia SO'].includes('Windows')).length}
+• Linux/Ubuntu: ${serverData.filter(s => s['Licencia SO'].includes('Linux') || s['Licencia SO'].includes('Ubuntu')).length}
+• VMware ESXi: ${serverData.filter(s => s['Licencia SO'].includes('VMware')).length}
+
+📅 Reporte generado: ${new Date().toLocaleString()}
+            `;
+
+            console.log(report);
+
+            // Crear y descargar archivo de reporte
+            const blob = new Blob([report], { type: 'text/plain;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `reporte_servidores_${new Date().toISOString().split('T')[0]}.txt`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Inicialización final
+        window.addEventListener('load', function () {
+            // Verificar alertas iniciales
+            checkAlerts();
+
+            // Agregar event listeners adicionales si es necesario
+            console.log('✅ Dashboard de Inventario de Servidores cargado correctamente');
+            console.log(`📊 Mostrando datos de ${serverData.length} servidores`);
+            console.log('🔧 Funciones disponibles: exportToCSV(), generateReport(), searchServers(query)');
+        });
+    </script>
+</body>

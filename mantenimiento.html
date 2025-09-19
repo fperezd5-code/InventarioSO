@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mantenimiento de Servidores</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .nav-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .toolbar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1976D2, #2196F3);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #388E3C, #4CAF50);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #FF9800, #FFB74D);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #D32F2F, #F44336);
+            color: white;
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #1976D2;
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #1976D2, #2196F3);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .server-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .server-table th,
+        .server-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        .server-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #1976D2;
+            position: sticky;
+            top: 0;
+        }
+
+        .server-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #1976D2, #2196F3);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #1976D2;
+        }
+
+        .form-input {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1976D2;
+        }
+
+        .form-select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-fisico {
+            background: #E8F5E8;
+            color: #388E3C;
+        }
+
+        .status-virtual {
+            background: #FFF8E1;
+            color: #FBC02D;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .alert-success {
+            background: #E8F5E8;
+            color: #388E3C;
+            border: 1px solid #C8E6C9;
+        }
+
+        .alert-error {
+            background: #FFEBEE;
+            color: #D32F2F;
+            border: 1px solid #FFCDD2;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Mantenimiento de Servidores</h1>
+            <a href="Inventario.html" class="nav-button">📊 Ver Dashboard</a>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="openModal('create')">
+                ➕ Nuevo Servidor
+            </button>
+            <!--<button class="btn btn-success" onclick="exportData()">
+                💾 Exportar JSON
+            </button>
+            <button class="btn btn-warning" onclick="importData()">
+                📁 Importar JSON
+            </button>-->
+            <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar servidores..."
+                onkeyup="filterServers()">
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="data-table">
+            <div class="table-header">
+                Lista de Servidores - Gestión CRUD
+            </div>
+            <div class="table-container">
+                <table class="server-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Modelo</th>
+                            <th>CPU</th>
+                            <th>RAM</th>
+                            <th>SO</th>
+                            <th>Ubicación</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="serverTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para crear/editar servidor -->
+    <div id="serverModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Servidor</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="serverForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">ID Servidor *</label>
+                            <input type="text" class="form-input" id="idServidor" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nombre Servidor *</label>
+                            <input type="text" class="form-input" id="nombreServidor" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tipo *</label>
+                            <select class="form-select" id="tipo" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Físico">Físico</option>
+                                <option value="Virtual">Virtual</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Virtualizado</label>
+                            <select class="form-select" id="virtualizado">
+                                <option value="">N/A</option>
+                                <option value="Sí">Sí</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Modelo Equipo *</label>
+                            <input type="text" class="form-input" id="modeloEquipo" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Procesador *</label>
+                            <input type="text" class="form-input" id="procesador" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">RAM (GB) *</label>
+                            <input type="number" class="form-input" id="ram" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Almacenamiento (TB)</label>
+                            <input type="number" class="form-input" id="almacenamientoTB" step="0.1" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Almacenamiento (GB)</label>
+                            <input type="number" class="form-input" id="almacenamientoGB" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Licencia SO *</label>
+                            <input type="text" class="form-input" id="licenciaSO" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Versión SO</label>
+                            <input type="text" class="form-input" id="versionSO">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Hipervisor</label>
+                            <input type="text" class="form-input" id="hipervisor">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Versión Hipervisor</label>
+                            <input type="text" class="form-input" id="versionHipervisor">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Garantía</label>
+                            <input type="text" class="form-input" id="garantia">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Soporte</label>
+                            <input type="text" class="form-input" id="soporte">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha Adquisición</label>
+                            <input type="date" class="form-input" id="fechaAdquisicion">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Aplicativos Soportados</label>
+                            <input type="text" class="form-input" id="aplicativos">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ubicación *</label>
+                            <select class="form-select" id="ubicacion" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Data Center A">Data Center A</option>
+                                <option value="Data Center B">Data Center B</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Consumo Máx (Watts)</label>
+                            <input type="number" class="form-input" id="consumoMax" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">BTU/H</label>
+                            <input type="number" class="form-input" id="btuH" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Voltaje Soportado</label>
+                            <input type="text" class="form-input" id="voltajeSoportado">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Voltaje Conectado</label>
+                            <input type="text" class="form-input" id="voltajeConectado">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fuentes de Poder</label>
+                            <input type="number" class="form-input" id="fuentesPoder" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Uso CPU (%)</label>
+                            <input type="number" class="form-input" id="usoCPU" min="0" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Uso RAM (%)</label>
+                            <input type="number" class="form-input" id="usoRAM" min="0" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Uso Disco (%)</label>
+                            <input type="number" class="form-input" id="usoDisco" min="0" max="100">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="closeModal()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveServer()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // Datos de servidores (inicialmente del JSON)
+        let serversData = [];
+        let currentEditingIndex = -1;
+        let isEditMode = false;
+
+
+        // Función para cargar datos desde el archivo JSON
+        async function loadFromJSON() {
+            try {
+                const response = await window.fs.readFile('inventario_servers.json', { encoding: 'utf8' });
+                const jsonData = JSON.parse(response);
+
+                console.log('✅ Datos cargados desde JSON:', jsonData.length, 'servidores');
+                return jsonData;
+            } catch (error) {
+                console.error('❌ Error al cargar JSON:', error);
+                return [];
+            }
+        }
+
+        // Función para cargar datos (prioridad: localStorage -> JSON)
+        async function loadServersData() {
+            try {
+                // Primero verificar si hay datos en localStorage
+                const storedData = localStorage.getItem('serversData');
+                if (storedData) {
+                    serversData = JSON.parse(storedData);
+                    console.log('🔄 Datos cargados desde localStorage:', serversData.length, 'servidores');
+                } else {
+                    // Si no hay datos guardados, cargar desde JSON
+                    serversData = await loadFromJSON();
+                    if (serversData.length > 0) {
+                        // Guardar en localStorage para futuras consultas
+                        saveToStorage();
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error al cargar datos de servidores:', error);
+                serversData = [];
+            }
+        }
+
+        // Función mejorada para guardar en localStorage
+        function saveToStorage() {
+            try {
+                localStorage.setItem('serversData', JSON.stringify(serversData));
+                console.log('💾 Datos guardados en localStorage');
+
+                // Disparar evento personalizado para notificar cambios
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'serversData',
+                    newValue: JSON.stringify(serversData),
+                    storageArea: localStorage
+                }));
+            } catch (error) {
+                console.error('❌ Error al guardar datos:', error);
+            }
+        }
+
+        // Renderizar tabla
+        function renderTable(filteredData = null) {
+            const tbody = document.getElementById('serverTableBody');
+            const data = filteredData || serversData;
+
+            tbody.innerHTML = '';
+
+            data.forEach((server, index) => {
+                const row = document.createElement('tr');
+                const originalIndex = filteredData ? serversData.findIndex(s => s['ID Servidor'] === server['ID Servidor']) : index;
+
+                row.innerHTML = `
+                    <td><strong>${server['ID Servidor']}</strong></td>
+                    <td>${server['Nombre Servidor']}</td>
+                    <td><span class="status-badge status-${server.Tipo.toLowerCase()}">${server.Tipo}</span></td>
+                    <td>${server['Modelo Equipo']}</td>
+                    <td>${server.Procesador}</td>
+                    <td>${server['RAM (GB)']} GB</td>
+                    <td>${server['Licencia SO']}</td>
+                    <td>📍 ${server.Ubicación}</td>
+                    <td><span class="status-badge ${getServerStatus(server)}">${getStatusText(server)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-warning btn-sm" onclick="editServer(${originalIndex})">✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteServer(${originalIndex})">🗑️</button>
+                        </div>
+                    </td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+
+        // Obtener estado del servidor
+        function getServerStatus(server) {
+            const avgUsage = (server['Uso CPU (%)'] + server['Uso RAM (%)'] + server['Uso Disco (%)']) / 3;
+            if (avgUsage >= 75) return 'status-critico';
+            if (avgUsage >= 60) return 'status-advertencia';
+            return 'status-optimo';
+        }
+
+        function getStatusText(server) {
+            const avgUsage = (server['Uso CPU (%)'] + server['Uso RAM (%)'] + server['Uso Disco (%)']) / 3;
+            if (avgUsage >= 75) return 'Crítico';
+            if (avgUsage >= 60) return 'Advertencia';
+            return 'Óptimo';
+        }
+
+        // Filtrar servidores
+        function filterServers() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const filteredData = serversData.filter(server => {
+                return Object.values(server).some(value =>
+                    value && value.toString().toLowerCase().includes(searchTerm)
+                );
+            });
+            renderTable(filteredData);
+        }
+
+        // Abrir modal
+        function openModal(mode, index = -1) {
+            const modal = document.getElementById('serverModal');
+            const modalTitle = document.getElementById('modalTitle');
+
+            if (mode === 'create') {
+                modalTitle.textContent = 'Nuevo Servidor';
+                isEditMode = false;
+                clearForm();
+            } else if (mode === 'edit') {
+                modalTitle.textContent = 'Editar Servidor';
+                isEditMode = true;
+                currentEditingIndex = index;
+                loadServerData(index);
+            }
+
+            modal.style.display = 'block';
+        }
+
+        // Cerrar modal
+        function closeModal() {
+            document.getElementById('serverModal').style.display = 'none';
+            clearForm();
+            isEditMode = false;
+            currentEditingIndex = -1;
+        }
+
+        // Limpiar formulario
+        function clearForm() {
+            const form = document.getElementById('serverForm');
+            form.reset();
+        }
+
+        // Cargar datos del servidor en el formulario
+        function loadServerData(index) {
+            const server = serversData[index];
+
+            document.getElementById('idServidor').value = server['ID Servidor'] || '';
+            document.getElementById('nombreServidor').value = server['Nombre Servidor'] || '';
+            document.getElementById('tipo').value = server['Tipo'] || '';
+            document.getElementById('virtualizado').value = server['Virtualizado'] || '';
+            document.getElementById('modeloEquipo').value = server['Modelo Equipo'] || '';
+            document.getElementById('procesador').value = server['Procesador'] || '';
+            document.getElementById('ram').value = server['RAM (GB)'] || '';
+            document.getElementById('almacenamientoTB').value = server['Almacenamiento (TB)'] || '';
+            document.getElementById('almacenamientoGB').value = server['Almacenamiento (GB)'] || '';
+            document.getElementById('licenciaSO').value = server['Licencia SO'] || '';
+            document.getElementById('versionSO').value = server['Versión SO'] || '';
+            document.getElementById('hipervisor').value = server['Hipervisor'] || '';
+            document.getElementById('versionHipervisor').value = server['Versión Hipervisor'] || '';
+            document.getElementById('garantia').value = server['Garantía'] || '';
+            document.getElementById('soporte').value = server['Soporte'] || '';
+            document.getElementById('fechaAdquisicion').value = server['Fecha adquisición'] || '';
+            document.getElementById('aplicativos').value = server['Aplicativos soportados'] || '';
+            document.getElementById('ubicacion').value = server['Ubicación'] || '';
+            document.getElementById('consumoMax').value = server['Consumo Máx (Watts)'] || '';
+            document.getElementById('btuH').value = server['BTU/H'] || '';
+            document.getElementById('voltajeSoportado').value = server['Voltaje soportado'] || '';
+            document.getElementById('voltajeConectado').value = server['Voltaje conectado'] || '';
+            document.getElementById('fuentesPoder').value = server['Fuentes de poder'] || '';
+            document.getElementById('usoCPU').value = server['Uso CPU (%)'] || '';
+            document.getElementById('usoRAM').value = server['Uso RAM (%)'] || '';
+            document.getElementById('usoDisco').value = server['Uso Disco (%)'] || '';
+        }
+
+        // Guardar servidor
+        function saveServer() {
+            const form = document.getElementById('serverForm');
+
+            if (!form.checkValidity()) {
+                showAlert('Por favor completa todos los campos requeridos', 'error');
+                return;
+            }
+
+            const serverData = {
+                "ID Servidor": document.getElementById('idServidor').value,
+                "Tipo": document.getElementById('tipo').value,
+                "Virtualizado": document.getElementById('virtualizado').value || null,
+                "Nombre Servidor": document.getElementById('nombreServidor').value,
+                "Modelo Equipo": document.getElementById('modeloEquipo').value,
+                "Procesador": document.getElementById('procesador').value,
+                "RAM (GB)": parseInt(document.getElementById('ram').value),
+                "Almacenamiento (TB)": parseFloat(document.getElementById('almacenamientoTB').value) || null,
+                "Licencia SO": document.getElementById('licenciaSO').value,
+                "Versión SO": parseFloat(document.getElementById('versionSO').value) || null,
+                "Hipervisor": document.getElementById('hipervisor').value || null,
+                "Versión Hipervisor": parseFloat(document.getElementById('versionHipervisor').value) || null,
+                "Garantía": document.getElementById('garantia').value || null,
+                "Soporte": document.getElementById('soporte').value || null,
+                "Fecha adquisición": document.getElementById('fechaAdquisicion').value || null,
+                "Claves Admin": "******",
+                "Aplicativos soportados": document.getElementById('aplicativos').value || null,
+                "Ubicación": document.getElementById('ubicacion').value,
+                "Consumo Máx (Watts)": parseInt(document.getElementById('consumoMax').value) || null,
+                "BTU/H": parseInt(document.getElementById('btuH').value) || null,
+                "Voltaje soportado": document.getElementById('voltajeSoportado').value || null,
+                "Voltaje conectado": document.getElementById('voltajeConectado').value || null,
+                "Fuentes de poder": parseInt(document.getElementById('fuentesPoder').value) || null,
+                "Uso CPU (%)": parseInt(document.getElementById('usoCPU').value) || 0,
+                "Uso RAM (%)": parseInt(document.getElementById('usoRAM').value) || 0,
+                "Uso Disco (%)": parseInt(document.getElementById('usoDisco').value) || 0,
+                "Almacenamiento (GB)": parseFloat(document.getElementById('almacenamientoGB').value) || null
+            };
+
+            if (isEditMode) {
+                serversData[currentEditingIndex] = serverData;
+                showAlert('Servidor actualizado exitosamente', 'success');
+            } else {
+                // Verificar si el ID ya existe
+                if (serversData.some(s => s['ID Servidor'] === serverData['ID Servidor'])) {
+                    showAlert('Ya existe un servidor con ese ID', 'error');
+                    return;
+                }
+                serversData.push(serverData);
+                showAlert('Servidor creado exitosamente', 'success');
+            }
+
+            renderTable();
+            saveToStorage();
+            closeModal();
+        }
+
+        // Editar servidor
+        function editServer(index) {
+            openModal('edit', index);
+        }
+
+        // Eliminar servidor
+        function deleteServer(index) {
+            if (confirm('¿Estás seguro de que quieres eliminar este servidor?')) {
+                const serverName = serversData[index]['Nombre Servidor'];
+                serversData.splice(index, 1);
+                renderTable();
+                saveToStorage();
+                showAlert(`Servidor "${serverName}" eliminado exitosamente`, 'success');
+            }
+        }
+
+        // Mostrar alertas
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Exportar datos a JSON
+        function exportData() {
+            const dataStr = JSON.stringify(serversData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+            const exportFileDefaultName = `inventario_servers_${new Date().toISOString().split('T')[0]}.json`;
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+
+            showAlert('Datos exportados exitosamente', 'success');
+        }
+
+        // Importar datos desde JSON
+        function importData() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+
+                    if (confirm('¿Estás seguro de que quieres reemplazar todos los datos actuales?')) {
+                        serversData = importedData;
+                        renderTable();
+                        saveToStorage();
+                        showAlert('Datos importados exitosamente', 'success');
+                    }
+                } catch (error) {
+                    showAlert('Error al importar el archivo JSON', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Guardar en localStorage
+        function saveToStorage() {
+            localStorage.setItem('serversData', JSON.stringify(serversData));
+        }
+
+        // Cerrar modal al hacer clic fuera
+        window.onclick = function (event) {
+            const modal = document.getElementById('serverModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Validaciones adicionales
+        function validateForm() {
+            const tipo = document.getElementById('tipo').value;
+            const virtualizado = document.getElementById('virtualizado').value;
+
+            // Si es virtual, virtualizado debe ser null o vacío
+            if (tipo === 'Virtual') {
+                document.getElementById('virtualizado').value = '';
+            }
+
+            // Si es físico y está virtualizado, ajustar algunos campos
+            if (tipo === 'Físico' && virtualizado === 'Sí') {
+                // Campos específicos para hipervisores
+            }
+        }
+
+        // Generar ID automático
+        function generateServerId() {
+            const tipo = document.getElementById('tipo').value;
+            if (!tipo) return;
+
+            const prefix = tipo === 'Físico' ? 'FISICO-' : 'VRT-';
+            const existingIds = serversData
+                .filter(s => s['ID Servidor'].startsWith(prefix))
+                .map(s => s['ID Servidor']);
+
+            let counter = 1;
+            let newId;
+
+            do {
+                newId = tipo === 'Físico'
+                    ? `${prefix}${counter.toString().padStart(2, '0')}`
+                    : `${prefix}${counter.toString().padStart(2, '0')}-HYP-VM${counter.toString().padStart(2, '0')}`;
+                counter++;
+            } while (existingIds.includes(newId));
+
+            document.getElementById('idServidor').value = newId;
+        }
+
+        // Event listener para generar ID automático
+        document.getElementById('tipo').addEventListener('change', function () {
+            if (!isEditMode) {
+                generateServerId();
+            }
+            validateForm();
+        });
+
+        // Funciones de estadísticas rápidas
+        function getQuickStats() {
+            const total = serversData.length;
+            const fisicos = serversData.filter(s => s.Tipo === 'Físico').length;
+            const virtuales = serversData.filter(s => s.Tipo === 'Virtual').length;
+            const totalRAM = serversData.reduce((sum, s) => sum + (s['RAM (GB)'] || 0), 0);
+            const totalPower = serversData.reduce((sum, s) => sum + (s['Consumo Máx (Watts)'] || 0), 0);
+
+            return {
+                total,
+                fisicos,
+                virtuales,
+                totalRAM,
+                totalPower
+            };
+        }
+
+        // Función para sincronizar con el dashboard
+        function syncWithDashboard() {
+            // Forzar guardado en localStorage
+            saveToStorage();
+
+            // Enviar mensaje a otras pestañas/ventanas para actualizar
+            if (typeof BroadcastChannel !== 'undefined') {
+                const channel = new BroadcastChannel('server_data_sync');
+                channel.postMessage({
+                    type: 'DATA_UPDATED',
+                    timestamp: new Date().toISOString(),
+                    count: serversData.length
+                });
+                channel.close();
+            }
+
+            showAlert('Datos sincronizados con el dashboard', 'success');
+        }
+
+        // Nueva inicialización cargando desde JSON
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Cargar datos desde JSON o localStorage
+            await loadServersData();
+
+            // Renderizar tabla inicial
+            renderTable();
+
+            // Agregar botón de recarga desde JSON
+            addReloadButton();
+
+            console.log('✅ Módulo de mantenimiento cargado');
+            console.log('📊', serversData.length, 'servidores en el inventario');
+        });
+
+        // Función para agregar botón de recarga desde JSON
+        function addReloadButton() {
+            const toolbar = document.querySelector('.toolbar');
+            const reloadButton = document.createElement('button');
+            reloadButton.className = 'btn btn-warning';
+            reloadButton.innerHTML = '🔄 Recargar desde JSON';
+            reloadButton.onclick = reloadFromJSON;
+
+            // Insertar antes del botón de sincronización
+            //const syncButton = toolbar.querySelector('button[onclick="syncWithDashboard()"]');
+            //if (syncButton) {
+            //    toolbar.insertBefore(reloadButton, syncButton);
+            //} else {
+            //    toolbar.appendChild(reloadButton);
+            //}
+        }
+
+        // Función para recargar datos desde JSON
+        async function reloadFromJSON() {
+            if (confirm('¿Estás seguro de que quieres recargar los datos desde el archivo JSON original? Se perderán los cambios no guardados.')) {
+                try {
+                    serversData = await loadFromJSON();
+                    if (serversData.length > 0) {
+                        saveToStorage();
+                        renderTable();
+                        showAlert('Datos recargados exitosamente desde JSON', 'success');
+                    } else {
+                        showAlert('No se pudieron cargar los datos del archivo JSON', 'error');
+                    }
+                } catch (error) {
+                    showAlert('Error al recargar datos desde JSON', 'error');
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        // Agregar estilos CSS adicionales para estados
+        const additionalStyles = `
+            .status-critico { background: #FFEBEE; color: #D32F2F; }
+            .status-advertencia { background: #FFF8E1; color: #FBC02D; }
+            .status-optimo { background: #E8F5E8; color: #388E3C; }
+        `;
+
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = additionalStyles;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+
+</html>
