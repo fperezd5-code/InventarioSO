@@ -662,7 +662,7 @@
         let serverData = [];
 
         // Función para cargar datos del JSON o localStorage
-        async function loadServerData() {
+       async function loadServerData() {
             try {
                 // Primero intentar cargar desde localStorage (datos actualizados del mantenimiento)
                 const storedData = localStorage.getItem('serversData');
@@ -672,20 +672,33 @@
                     return;
                 }
 
-                // Si no hay datos en localStorage, cargar desde el JSON
-                const response = await window.fs.readFile('inventario_servers.json', { encoding: 'utf8' });
-                serverData = JSON.parse(response);
+                // Si no hay datos en localStorage, intentar cargar desde el JSON
+                try {
+                    if (typeof window.fs !== 'undefined' && window.fs.readFile) {
+                        const response = await window.fs.readFile('inventario_servers.json', { encoding: 'utf8' });
+                        serverData = JSON.parse(response);
+                        // Guardar en localStorage para futuras consultas
+                        localStorage.setItem('serversData', JSON.stringify(serverData));
+                        console.log('✅ Datos cargados desde JSON:', serverData.length, 'servidores');
+                        return;
+                    }
+                } catch (jsonError) {
+                    console.error('❌ Error al cargar JSON:', jsonError);
+                }
 
-                // Guardar en localStorage para futuras consultas
-                localStorage.setItem('serversData', JSON.stringify(serverData));
-                console.log('✅ Datos cargados desde JSON:', serverData.length, 'servidores');
+                // Si llegamos aquí, no se pudieron cargar los datos
+                console.error('❌ No se pueden cargar los datos del JSON. API de archivos no disponible.');
+                serverData = [];
+                
+                // Mostrar mensaje al usuario
+                alert('No se pudieron cargar los datos del inventario. Por favor, usa el módulo de mantenimiento para importar datos o asegúrate de que el archivo JSON esté disponible.');
 
             } catch (error) {
                 console.error('❌ Error al cargar datos:', error);
                 serverData = [];
             }
         }
-
+        
         // Función para detectar cambios y actualizar automáticamente
         function setupDataSync() {
             // Configurar BroadcastChannel
